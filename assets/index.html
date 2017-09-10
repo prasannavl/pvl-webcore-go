@@ -1,0 +1,28 @@
+<head>
+    <script src="https://localhost:8000/assets/gotalk.js"></script>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", () => {
+            var s = gotalk.connection()
+                .on('open', function () {
+                    console.log("conn open");
+                    s.request("echo", "Hello world", function (err, result) {
+                        if (err) return console.error('echo failed:', err);
+                        console.log('echo result:', result);
+                    });
+
+                    setTimeout(() => {
+                        s.request("echo", "Hello world", function (err, result) {
+                            if (err) return console.error('echo failed:', err);
+                            console.log('echo result 2:', result);
+                        });
+                    }, 5000)
+
+                }).on('close', function (err) {
+                    console.log("conn closed");
+                    if (err && err.isGotalkProtocolError) return console.error(err);
+                });
+        });
+    </script>
+</head>
+
+Hello world!
