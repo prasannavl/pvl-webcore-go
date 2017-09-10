@@ -10,12 +10,10 @@
                         console.log('echo result:', result);
                     });
 
-                    setTimeout(() => {
-                        s.request("echo", "Hello world", function (err, result) {
-                            if (err) return console.error('echo failed:', err);
-                            console.log('echo result 2:', result);
-                        });
-                    }, 5000)
+                    s.request("date", function (err, result) {
+                        if (err) return console.error('echo failed:', err);
+                        console.log('date result:', result);
+                    });
 
                 }).on('close', function (err) {
                     console.log("conn closed");
