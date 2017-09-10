@@ -44,7 +44,7 @@ test_build() {
 
 deploy() {
     echo "> deploy: start"
-    mkdir -p "$deploy_dir"
+    mkdir -p "$bin_dir" "$assets_dir"
     graceful_exit_or_kill "$binary_name" 90
     mv -f "${build_target}" "$bin_dir"
     rm -rf "${assets_dir}" && mkdir -p "${assets_dir}"
