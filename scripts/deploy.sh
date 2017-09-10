@@ -48,8 +48,7 @@ deploy() {
     graceful_exit_or_kill "$binary_name" 90
     mv -f "${build_target}" "$bin_dir"
     rm -rf "${assets_dir}" && mkdir -p "${assets_dir}"
-    ls -al
-    cp -a "www/*" "${assets_dir}/"
+    cp -a ./www/* "${assets_dir}/"
     echo "> deploy: done"
 }
 
