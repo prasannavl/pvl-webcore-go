@@ -14,7 +14,7 @@ func apiHandlers(context *AppContext) *gotalk.Handlers {
 		return in, nil
 	})
 
-	h.Handle("date", func() (time.Time, error) {
+	h.Handle("date", func(in string) (time.Time, error) {
 		return time.Now(), nil
 	})
 
