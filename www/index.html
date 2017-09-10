@@ -4,7 +4,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             var s = gotalk.connection()
                 .on('open', function () {
-                    console.log("conn open");
+
                     s.request("echo", "Hello world", function (err, result) {
                         if (err) return console.error('echo failed:', err);
                         console.log('echo result:', result);
@@ -13,11 +13,6 @@
                     s.request("hello", function (err, result) {
                         if (err) return console.error('hello failed:', err);
                         console.log('hello result:', result);
-                    });
-
-                    s.request("date", null, function (err, result) {
-                        if (err) return console.error('date failed:', err);
-                        console.log('date result:', result);
                     });
 
                 }).on('close', function (err) {
