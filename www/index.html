@@ -16,7 +16,6 @@
                     });
 
                 }).on('close', function (err) {
-                    console.log("conn closed");
                     if (err && err.isGotalkProtocolError) return console.error(err);
                 });
         });
