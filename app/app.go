@@ -25,7 +25,7 @@ func newAppHandler(c *AppContext, webRoot string) mchain.Handler {
 	apiHandlers := apiHandlers(c)
 	wss := gosock.NewWebSocketServer(apiHandlers)
 	notFoundFilePath := webRoot + "/error/404.html"
-	goTalkPath := "/gotalk.ts"
+	goTalkPath := "/gotalk.js"
 
 	b := builder.Create()
 
@@ -67,11 +67,11 @@ func NewApp(logger *log.Logger, addr string, webRoot string, hosts []string) htt
 	for _, h := range hosts {
 		r.HandlePattern(h, appHandler)
 	}
-
+	r.HandleHost("", appHandler)
 	notFoundFilePath := webRoot + "/error/404.html"
 
-	return r.Build(hconv.FuncToHttp(
-		utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound).ServeHTTP,
+	return r.Build(hconv.ToHttp(
+		utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound),
 		utils.InternalServerErrorAndLog))
 }
 
