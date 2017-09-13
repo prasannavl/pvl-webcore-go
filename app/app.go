@@ -24,6 +24,8 @@ import (
 func newAppHandler(c *AppContext, webRoot string) mchain.Handler {
 	apiHandlers := apiHandlers(c)
 	wss := gosock.NewWebSocketServer(apiHandlers)
+	notFoundFilePath := webRoot + "/error/404.html"
+	goTalkPath := "/gotalk.ts"
 
 	b := builder.Create()
 
@@ -33,14 +35,12 @@ func newAppHandler(c *AppContext, webRoot string) mchain.Handler {
 		middleware.ErrorHandlerMiddleware,
 		middleware.PanicRecoveryMiddleware,
 		middleware.CreateRequestIDHandler(false),
-		chainutils.OnPrefix("/api", wss),
-		chainutils.OnPrefix("/assets/gotalk.js", gosock.CreateAssetHandler("/assets/gotalk.js", "/api", false)),
+		chainutils.Hook(gosock.CreateAssetHandler(goTalkPath, "/", false)),
+		chainutils.Mount("/static", fileserver.NewEx(http.Dir(webRoot),
+			utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound).ServeHTTP)),
 	)
 
-	notFoundFilePath := webRoot + "/error/404.html"
-
-	b.Handler(fileserver.NewEx(http.Dir(webRoot),
-		utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound).ServeHTTP))
+	b.Handler(wss)
 	return b.Build()
 }
 

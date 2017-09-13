@@ -8,6 +8,7 @@ bin_dir="${app_dir}/bin"
 assets_dir="${app_dir}/www"
 logs_dir="${app_dir}/logs"
 
+build_assets_dir="./www"
 build_target="./bin/${binary_name}"
 
 main() {
@@ -44,11 +45,11 @@ test_build() {
 
 deploy() {
     echo "> deploy: start"
+    rm -rf "${assets_dir}"
     mkdir -p "$bin_dir" "$assets_dir"
     graceful_exit_or_kill "$binary_name" 90
     mv -f "${build_target}" "$bin_dir"
-    rm -rf "${assets_dir}" && mkdir -p "${assets_dir}"
-    cp -a ./www/* "${assets_dir}/"
+    cp -a $build_assets_dir/* "${assets_dir}/"
     echo "> deploy: done"
 }
 
@@ -60,7 +61,7 @@ start() {
     sudo setcap cap_net_bind_service=+ep "$binary_path"
     local log_file_exec="${logs_dir}/${binary_name}-exec.log"
     local log_file="${logs_dir}/${binary_name}.log"
-    nohup "$binary_path" --address=":443" --root="${assets_dir}" --redirector=":80" --hosts="api.prasannavl.com" --hosts="labs.prasannavl.com" --hosts="api.statwick.com" --hosts="labs.statwick.com" --log="${log_file}" &>> "${log_file_exec}" &
+    nohup "$binary_path" --address=":443" --root="${assets_dir}" --redirector=":80" --hosts="api.prasannavl.com" --hosts="api.statwick.com" --log="${log_file}" &>> "${log_file_exec}" &
     echo "> run: done"
 }
 
