@@ -33,7 +33,9 @@ build() {
     echo "> build: start"
     # go get -v -u github.com/golang/dep/cmd/dep || true
     # dep ensure || true
-    go get ... || true
+    echo "> build: updating deps"
+    go get -d -u ... || true
+    echo "> build: compiling"    
     go build -o "${build_target}"
     echo "> build: done"
 }
