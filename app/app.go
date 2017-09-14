@@ -72,12 +72,11 @@ func NewApp(logger *log.Logger, addr string, webRoot string, hosts []string) htt
 
 	return r.Build(hconv.ToHttp(
 		utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound),
-		utils.InternalServerErrorAndLog))
+		utils.HttpCodeOrLoggedInternalServerError))
 }
 
-func CreateService(logger *log.Logger, addr string, webRoot string, hosts []string,
-	insecure bool, useSelfSigned bool) (httpservice.Service, error) {
-	app := NewApp(logger, addr, webRoot, hosts)
-	return httpservice.NewHandlerService(logger, addr, app,
-		webRoot, hosts, insecure, useSelfSigned)
+func CreateService(opts *httpservice.HandlerServiceOpts) (httpservice.Service, error) {
+	app := NewApp(opts.Logger, opts.Addr, opts.WebRoot, opts.Hosts)
+	opts.Handler = app
+	return httpservice.NewHandlerService(opts)
 }

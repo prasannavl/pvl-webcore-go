@@ -3,12 +3,14 @@ package main
 import (
 	"net/http"
 	"path/filepath"
+	"runtime/debug"
 
 	flag "github.com/spf13/pflag"
 
 	"fmt"
 
 	"github.com/prasannavl/go-gluons/http/diag"
+	"github.com/prasannavl/go-gluons/http/httpservice"
 	"github.com/prasannavl/go-gluons/http/redirector"
 
 	"github.com/prasannavl/go-gluons/appx"
@@ -30,13 +32,14 @@ type EnvFlags struct {
 	UseSelfSigned  bool
 	Hosts          []string
 	WebRoot        string
+	CertCacheDir   string
 }
 
 func initFlags(env *EnvFlags) {
 	flag.BoolVar(&env.DisplayVersion, "version", false, "display the version and exit")
 	flag.CountVarP(&env.Verbosity, "verbose", "v", "verbosity level")
 	flag.StringVarP(&env.Addr, "address", "a", "localhost:8000", "the 'host:port' for the service to listen on")
-	flag.StringVar(&env.DiagAddr, "dapi-address", "localhost:9090", "the 'host:port' for pprof")
+	flag.StringVar(&env.DiagAddr, "dapi-address", "localhost:9090", "the 'host:port' for diagnostics api")
 	flag.StringVar(&env.LogFile, "log", "", "the log file destination")
 	flag.BoolVar(&env.LogDisabled, "no-log", false, "disable the logger")
 	flag.BoolVarP(&env.LogHumanize, "log-humanize", "h", false, "humanize log messages")
@@ -45,6 +48,7 @@ func initFlags(env *EnvFlags) {
 	flag.StringVar(&env.RedirectorAddr, "redirector", "", "a redirector address as 'host:port' to enable")
 	flag.StringArrayVar(&env.Hosts, "hosts", nil, "'host:port' items to enable hosts filter")
 	flag.StringVar(&env.WebRoot, "root", "", "web root path")
+	flag.StringVar(&env.CertCacheDir, "cert-dir", "", "the auto-tls certificate cache dir")
 
 	flag.Usage = func() {
 		printPackageHeader(false)
@@ -89,6 +93,7 @@ func main() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Errorv(err)
+			debug.PrintStack()
 		}
 	}()
 
@@ -99,6 +104,7 @@ func main() {
 
 	logInitResult := initLogging(&env)
 	log.Infof("listen-address: %s", env.Addr)
+
 	if env.DiagAddr != "" {
 		s1 := diag.CreateWithConfigure(env.DiagAddr,
 			diag.SetupIndexNotFound,
@@ -110,10 +116,19 @@ func main() {
 		go s2.Run()
 	}
 
-	service, err := app.CreateService(
-		logInitResult.Logger, env.Addr,
-		filepath.Clean(env.WebRoot),
-		env.Hosts, env.Insecure, env.UseSelfSigned)
+	opts := httpservice.HandlerServiceOpts{
+		Addr:     env.Addr,
+		Logger:   logInitResult.Logger,
+		WebRoot:  filepath.Clean(env.WebRoot),
+		Hosts:    env.Hosts,
+		CacheDir: env.CertCacheDir,
+	}
+
+	if env.Insecure {
+		opts.Insecure = true
+	}
+
+	service, err := app.CreateService(&opts)
 
 	if err != nil {
 		log.Errorf("failed to create service: %v", err)
@@ -121,7 +136,7 @@ func main() {
 	}
 
 	appx.CreateShutdownHandler(func() {
-		service.Stop(0)
+		_ = service.Stop(0)
 	}, appx.ShutdownSignals...)
 
 	err = service.Run()
