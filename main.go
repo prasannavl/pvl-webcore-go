@@ -111,17 +111,19 @@ func main() {
 			diag.LogLevelSwitcher(nil))
 		go s1.Run()
 	}
+
 	if env.RedirectorAddr != "" {
 		s2 := redirector.Create(env.RedirectorAddr, env.Addr)
 		go s2.Run()
 	}
 
 	opts := httpservice.HandlerServiceOpts{
-		Addr:     env.Addr,
-		Logger:   logInitResult.Logger,
-		WebRoot:  filepath.Clean(env.WebRoot),
-		Hosts:    env.Hosts,
-		CacheDir: env.CertCacheDir,
+		Addr:          env.Addr,
+		Logger:        logInitResult.Logger,
+		WebRoot:       filepath.Clean(env.WebRoot),
+		Hosts:         env.Hosts,
+		CacheDir:      env.CertCacheDir,
+		UseSelfSigned: env.UseSelfSigned,
 	}
 
 	if env.Insecure {
