@@ -5,16 +5,16 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
+	"github.com/prasannavl/go-gluons/templates/httpserver/app"
 	flag "github.com/spf13/pflag"
 
 	"fmt"
 
 	"github.com/prasannavl/go-gluons/http/diag"
 	"github.com/prasannavl/go-gluons/http/httpservice"
-	"github.com/prasannavl/go-gluons/http/redirector"
+	"github.com/prasannavl/go-gluons/http/httpsredirector"
 
 	"github.com/prasannavl/go-gluons/appx"
-	"github.com/prasannavl/go-gluons/http/app-http/app"
 	"github.com/prasannavl/go-gluons/log"
 	"github.com/prasannavl/go-gluons/logconfig"
 )
@@ -27,6 +27,7 @@ type EnvFlags struct {
 	DisplayVersion bool
 	DiagAddr       string
 	LogHumanize    bool
+	LogEnableColor bool
 	Insecure       bool
 	RedirectorAddr string
 	UseSelfSigned  bool
@@ -36,6 +37,7 @@ type EnvFlags struct {
 }
 
 func initFlags(env *EnvFlags) {
+	flag.CommandLine.Init("default", flag.PanicOnError)
 	flag.BoolVar(&env.DisplayVersion, "version", false, "display the version and exit")
 	flag.CountVarP(&env.Verbosity, "verbose", "v", "verbosity level")
 	flag.StringVarP(&env.Addr, "address", "a", "localhost:8000", "the 'host:port' for the service to listen on")
@@ -43,9 +45,10 @@ func initFlags(env *EnvFlags) {
 	flag.StringVar(&env.LogFile, "log", "", "the log file destination")
 	flag.BoolVar(&env.LogDisabled, "no-log", false, "disable the logger")
 	flag.BoolVarP(&env.LogHumanize, "log-humanize", "h", false, "humanize log messages")
+	flag.BoolVar(&env.LogEnableColor, "log-color", true, "enable colored log messages")
 	flag.BoolVar(&env.Insecure, "insecure", false, "disable tls")
 	flag.BoolVar(&env.UseSelfSigned, "self-signed", false, "use randomly generated self signed certificate for tls")
-	flag.StringVar(&env.RedirectorAddr, "redirector", "", "a redirector address as 'host:port' to enable")
+	flag.StringVar(&env.RedirectorAddr, "redirector", "", "a http redirector address as 'host:port' to enable")
 	flag.StringArrayVar(&env.Hosts, "hosts", nil, "'host:port' items to enable hosts filter")
 	flag.StringVar(&env.WebRoot, "root", "", "web root path")
 	flag.StringVar(&env.CertCacheDir, "cert-dir", "", "the auto-tls certificate cache dir")
@@ -62,12 +65,11 @@ func initLogging(env *EnvFlags) logconfig.LogInitResult {
 	logInitResult := logconfig.LogInitResult{}
 	if !env.LogDisabled {
 		logOpts := logconfig.DefaultOptions()
-		if !env.LogHumanize {
-			logOpts.Humanize = logconfig.Humanize.False
-		}
+		logOpts.Humanize = env.LogHumanize
 		if env.LogFile != "" {
 			logOpts.LogFile = env.LogFile
 		}
+		logOpts.EnableColor = env.LogEnableColor
 		logOpts.VerbosityLevel = env.Verbosity
 		logconfig.Init(&logOpts, &logInitResult)
 	}
@@ -83,19 +85,19 @@ func printPackageHeader(versionOnly bool) {
 }
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorv(err)
+			log.Trace(string(debug.Stack()))
+		}
+	}()
+
 	appx.InitTerm()
 
 	env := EnvFlags{}
 	initFlags(&env)
 
 	flag.Parse()
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.Errorv(err)
-			debug.PrintStack()
-		}
-	}()
 
 	if env.DisplayVersion {
 		printPackageHeader(true)
@@ -113,7 +115,7 @@ func main() {
 	}
 
 	if env.RedirectorAddr != "" {
-		s2 := redirector.Create(env.RedirectorAddr, env.Addr)
+		s2 := httpsredirector.Create(env.RedirectorAddr, env.Addr)
 		go s2.Run()
 	}
 

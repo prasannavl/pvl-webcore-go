@@ -4,46 +4,32 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/prasannavl/go-gluons/http/httpservice"
-
-	"github.com/prasannavl/mchain/hconv"
-
-	"github.com/prasannavl/mchain"
-
-	"github.com/prasannavl/go-gluons/http/chainutils"
-	"github.com/prasannavl/go-gluons/http/gosock"
-	"github.com/prasannavl/go-gluons/http/hostrouter"
-	"github.com/prasannavl/go-gluons/http/utils"
-
 	"github.com/prasannavl/go-gluons/http/fileserver"
+	"github.com/prasannavl/go-gluons/http/hostrouter"
+	"github.com/prasannavl/go-gluons/http/httpservice"
 	"github.com/prasannavl/go-gluons/http/middleware"
 	"github.com/prasannavl/go-gluons/log"
-	"github.com/prasannavl/mchain/builder"
+	"github.com/prasannavl/mchain"
+	"github.com/prasannavl/mchain/hconv"
+	"github.com/prasannavl/mroute"
+	"github.com/prasannavl/mroute/pat"
 )
 
-// TODO: Router
-
 func newAppHandler(c *AppContext, webRoot string) mchain.Handler {
-	apiHandlers := apiHandlers(c)
-	wss := gosock.NewWebSocketServer(apiHandlers)
+	router := mroute.NewMux()
 
-	b := builder.Create()
-
-	b.Add(
-		middleware.CreateInitMiddleware(c.Logger),
-		middleware.CreateLogMiddleware(log.InfoLevel),
+	router.Use(
+		middleware.InitMiddleware(c.Logger),
+		middleware.LoggerMiddleware(log.InfoLevel),
 		middleware.ErrorHandlerMiddleware,
 		middleware.PanicRecoveryMiddleware,
-		middleware.CreateRequestIDHandler(false),
-		chainutils.OnPrefix("/api", wss),
-		chainutils.OnPrefix("/assets/gotalk.js", gosock.CreateAssetHandler("/assets/gotalk.js", "/api", false)),
+		middleware.RequestIDMiddleware(false),
 	)
 
-	notFoundFilePath := webRoot + "/error/404.html"
+	dir := http.Dir(webRoot)
+	router.Handle(pat.New("/*"), fileserver.NewEx(dir, nil))
 
-	b.Handler(fileserver.NewEx(http.Dir(webRoot),
-		utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound).ServeHTTP))
-	return b.Build()
+	return router
 }
 
 func createAppContext(logger *log.Logger, addr string) *AppContext {
@@ -60,21 +46,16 @@ func createAppContext(logger *log.Logger, addr string) *AppContext {
 
 func NewApp(logger *log.Logger, addr string, webRoot string, hosts []string) http.Handler {
 	context := createAppContext(logger, addr)
-	appHandler := hconv.ToHttp(newAppHandler(context, webRoot), nil)
+	appHandler := newAppHandler(context, webRoot)
 	if len(hosts) == 0 {
-		return appHandler
+		return hconv.ToHttp(appHandler, nil)
 	}
 	r := hostrouter.New()
 	log.Infof("host filters: %v", hosts)
 	for _, h := range hosts {
 		r.HandlePattern(h, appHandler)
 	}
-
-	notFoundFilePath := webRoot + "/error/404.html"
-
-	return r.Build(hconv.ToHttp(
-		utils.CreateFileHandler(notFoundFilePath, http.StatusNotFound),
-		utils.HttpCodeOrLoggedInternalServerError))
+	return r.BuildHttp(nil)
 }
 
 func CreateService(opts *httpservice.HandlerServiceOpts) (httpservice.Service, error) {
