@@ -19,5 +19,5 @@ vendor/
 debug
 
 # app
-apicore
-apicore.tar.gz
+pvl-webcore
+pvl-webcore.tar.gz
