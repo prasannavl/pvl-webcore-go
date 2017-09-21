@@ -40,7 +40,7 @@ start() {
     local log_file_exec="${LOGS_DIR}/${PKG_BASE_NAME}-exec.log"
     local log_file="${LOGS_DIR}/${PKG_BASE_NAME}.log"  
 
-    local cmd=$(echo "$binary_path" --address=":443" --root="${ASSETS_DIR}" --hosts="api.prasannavl.com" --hosts="api.statwick.com" --hosts="labs.prasannavl.com" --hosts="labs.statwick.com" --redirector=":80" --dapi-address="localhost:7000" --cert-dir="${CERT_DIR_CACHE}" --log="${log_file}")
+    local cmd=$(echo "$binary_path" --address=":443" --root="${ASSETS_DIR}" --hosts="api.prasannavl.com" --hosts="labs.prasannavl.com" --hosts="api.statwick.com" --hosts="labs.statwick.com" --redirector=":80" --dapi-address="localhost:7000" --cert-dir="${CERT_DIR_CACHE}" --log="${log_file}")
 
     echo "cmd: " $cmd
     nohup $cmd &>> "${log_file_exec}" &
