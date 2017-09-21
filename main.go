@@ -132,7 +132,7 @@ func main() {
 		opts.Insecure = true
 	}
 
-	service, err := app.CreateService(&opts)
+	service, err := app.CreateService(&opts, logInitResult.StdLogger)
 
 	if err != nil {
 		log.Errorf("failed to create service: %v", err)
