@@ -68,7 +68,6 @@ func NewApp(logger *log.Logger, addr string, webRoot string, hosts []string, std
 			r.HandlePattern(h, appHandler)
 		}
 	}
-
 	return r.BuildHttp(nil)
 }
 
