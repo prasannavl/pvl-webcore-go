@@ -8,7 +8,6 @@ import (
 	stdlog "log"
 
 	"github.com/prasannavl/go-gluons/http/fileserver"
-	"github.com/prasannavl/go-gluons/http/handlerutils"
 	"github.com/prasannavl/go-gluons/http/hostrouter"
 	"github.com/prasannavl/go-gluons/http/httpservice"
 	"github.com/prasannavl/go-gluons/http/middleware"
@@ -33,8 +32,11 @@ func newAppHandler(c *AppContext, webRoot string) mchain.Handler {
 
 	dir := http.Dir(webRoot)
 	router.Handle(pat.New("/*"),
-		fileserver.NewEx(dir, handlerutils.SendFromReaderHandler(
-			strings.NewReader("404 - Not Found"), 404)))
+		fileserver.NewEx(dir,
+			mchain.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+				w.Write([]byte("404 - Not Found"))
+				return nil
+			})))
 
 	return router
 }
