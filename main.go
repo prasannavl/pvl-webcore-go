@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
-	"github.com/prasannavl/go-gluons/templates/httpserver/app"
 	flag "github.com/spf13/pflag"
+	"gitlab.com/prasannavl/pvl-webcore/app"
 
 	"fmt"
 
