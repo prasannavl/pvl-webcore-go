@@ -60,7 +60,7 @@ func NewApp(logger *log.Logger, addr string, webRoot string, hosts []string, std
 	for _, h := range hosts {
 		// TODO: Later, extract this to config, may be.
 		if strings.HasSuffix(h, "statwick.com") {
-			const statwickHost = "localhost:8080"
+			const statwickHost = "localhost:9000"
 			proxy := reverseproxy.NewHostProxy(statwickHost, true)
 			proxy.ErrorLog = stdLogger
 			r.HandlePattern(h, hconv.FromHttp(proxy, false))
