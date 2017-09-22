@@ -34,6 +34,7 @@ func newAppHandler(c *AppContext, webRoot string) mchain.Handler {
 	router.Handle(pat.New("/*"),
 		fileserver.NewEx(dir,
 			mchain.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+				w.WriteHeader(http.StatusNotFound)
 				w.Write([]byte("404 - Not Found"))
 				return nil
 			})))
